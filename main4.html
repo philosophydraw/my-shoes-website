@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>我的小鞋 - 幼儿教学互动系统</title>
+  <style>
+    /* 基本样式 */
+    body {
+      font-family: sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background-color: #f0f0f0;
+      margin: 0;
+    }
+    #video-container {
+      position: relative;
+      width: 1050px;
+      height: 950px;
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+    }
+    video {
+      width: 100%;
+      display: block;
+    }
+    .interaction-panel {
+      display: none;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 80%;
+      max-width: 450px;
+      background-color: rgba(255, 255, 255, 0.95);
+      padding: 25px;
+      border-radius: 15px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+      text-align: center;
+      z-index: 10;
+      border: 1px solid #ccc;
+    }
+    .panel-title {
+        font-size: 1.5em;
+        font-weight: bold;
+        color: #333;
+        margin-bottom: 15px;
+    }
+    .question {
+        font-size: 1.2em;
+        color: #555;
+        margin-bottom: 20px;
+        line-height: 1.4;
+    }
+    .options {
+      display: flex;
+      justify-content: space-around;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .option {
+      cursor: pointer;
+      padding: 10px;
+      border: 2px solid transparent;
+      border-radius: 8px;
+      transition: border-color 0.3s, transform 0.3s;
+      text-align: center;
+      margin: 5px;
+    }
+    .option:hover {
+      transform: scale(1.05);
+    }
+    .option.selected {
+      border-color: #4CAF50;
+      background-color: #e8f5e9;
+    }
+    .option-label {
+        display: block;
+        margin-top: 5px;
+        font-size: 1em;
+        color: #333;
+    }
+    .submit-btn {
+      padding: 12px 25px;
+      font-size: 1em;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    .submit-btn:hover {
+      background-color: #45a049;
+    }
+    .drag-instruction {
+        font-size: 1.1em;
+        color: #555;
+        margin-bottom: 15px;
+    }
+    .drag-container {
+        display: flex;
+        justify-content: space-around;
+        margin-bottom: 20px;
+    }
+    .drag-item {
+        padding: 15px 25px;
+        background-color: #ffcc80;
+        border: 1px dashed #aaa;
+        border-radius: 5px;
+        cursor: grab;
+        font-weight: bold;
+    }
+    .drag-item img {
+        width: 60px;
+        height: auto;
+        display: block;
+    }
+    .shoe-cabinet {
+        background-image: url('鞋柜.jpg');
+        background-size: cover;
+        background-repeat: no-repeat;
+        background-position: center;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        min-height: 200px;
+        padding: 20px;
+        border: 1px solid #eee;
+        border-radius: 8px;
+        margin-top: 20px;
+    }
+    .drop-zone {
+        background-color: transparent;
+        border: 2px dashed rgba(76, 175, 80, 0.5);
+        border-radius: 8px;
+        width: 50%;
+        height: 180px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        color: transparent;
+        margin: 0;
+        transition: background-color 0.3s, border-color 0.3s;
+        overflow: hidden;
+    }
+    .drop-zone.highlight {
+        background-color: rgba(76, 175, 80, 0.4);
+        border-color: #388e3c;
+        border-style: solid;
+    }
+    .drop-zone img {
+        width: 60px;
+        height: auto;
+    }
+    .success-message {
+        color: #2e7d32;
+        font-weight: bold;
+        font-size: 1.1em;
+        background-color: rgba(255, 255, 255, 0.8);
+        padding: 5px;
+        border-radius: 4px;
+    }
+    .error-message {
+        color: #d32f2f;
+        font-weight: bold;
+        background-color: rgba(255, 255, 255, 0.8);
+        padding: 5px;
+        border-radius: 4px;
+    }
+    .option img {
+      width: 150px;
+      height: 150px;
+      object-fit: contain;
+      display: block;
+      margin: 0 auto 5px;
+    }
+  </style>
+</head>
+<body>
+  <div id="video-container">
+    <video id="videoPlayer" controls preload="auto">
+      <source src="video_converted.mp4" type="video/mp4" />
+      您的浏览器不支持视频播放
+    </video>
+
+    <!-- 三个问答交互面板 -->
+    <div id="quiz-run" class="interaction-panel">
+      <div class="panel-title">选择适合跑步的鞋子</div>
+      <div class="question">小朋友，我们要去跑步啦！<br>应该穿哪双鞋子呢？</div>
+      <div class="options">
+        <div class="option" data-answer="A">
+          <img src="运动鞋.jpg" alt="运动鞋" />
+          <span class="option-label">运动鞋</span>
+        </div>
+        <div class="option" data-answer="B">
+          <img src="雨靴.jpg" alt="雨靴" />
+          <span class="option-label">雨靴</span>
+        </div>
+        <div class="option" data-answer="C">
+          <img src="拖鞋.jpg" alt="拖鞋" />
+          <span class="option-label">拖鞋</span>
+        </div>
+      </div>
+      <button class="submit-btn" onclick="checkAnswer('quiz-run', 'A')">确认选择</button>
+    </div>
+
+    <div id="quiz-rain" class="interaction-panel">
+      <div class="panel-title">下雨天穿什么鞋</div>
+      <div class="question">哗啦啦下雨啦！<br>我们应该穿哪双鞋子出门呢？</div>
+      <div class="options">
+        <div class="option" data-answer="A">
+          <img src="运动鞋.jpg" alt="运动鞋" />
+          <span class="option-label">运动鞋</span>
+        </div>
+        <div class="option" data-answer="B">
+          <img src="雨靴.jpg" alt="雨靴" />
+          <span class="option-label">雨靴</span>
+        </div>
+        <div class="option" data-answer="C">
+          <img src="拖鞋.jpg" alt="拖鞋" />
+          <span class="option-label">拖鞋</span>
+        </div>
+      </div>
+      <button class="submit-btn" onclick="checkAnswer('quiz-rain', 'B')">确认选择</button>
+    </div>
+
+    <div id="quiz-home" class="interaction-panel">
+      <div class="panel-title">回家换什么鞋</div>
+      <div class="question">到家啦！<br>换上什么鞋子最舒服呢？</div>
+      <div class="options">
+        <div class="option" data-answer="A">
+          <img src="运动鞋.jpg" alt="运动鞋" />
+          <span class="option-label">运动鞋</span>
+        </div>
+        <div class="option" data-answer="B">
+          <img src="雨靴.jpg" alt="雨靴" />
+          <span class="option-label">雨靴</span>
+        </div>
+        <div class="option" data-answer="C">
+          <img src="拖鞋.jpg" alt="拖鞋" />
+          <span class="option-label">拖鞋</span>
+        </div>
+      </div>
+      <button class="submit-btn" onclick="checkAnswer('quiz-home', 'C')">确认选择</button>
+    </div>
+
+    <!-- 拖鞋互动 -->
+    <div id="drag-game" class="interaction-panel">
+      <div class="panel-title">整理小鞋子</div>
+      <p class="drag-instruction">把左右鞋分别放进对应的鞋印里吧！</p>
+      <div class="drag-container">
+        <div id="drag-left" class="drag-item" draggable="true">
+          <img src="左鞋.jpg" alt="左鞋">
+        </div>
+        <div id="drag-right" class="drag-item" draggable="true">
+          <img src="右鞋.jpg" alt="右鞋">
+        </div>
+      </div>
+      <div class="shoe-cabinet">
+        <div id="drop-left" class="drop-zone" data-side="left"></div>
+        <div id="drop-right" class="drop-zone" data-side="right"></div>
+        <div class="game-feedback"></div>
+        <button class="reset-btn" onclick="resetShoes()">重新开始</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const quizRun = document.getElementById('quiz-run');
+    const quizRain = document.getElementById('quiz-rain');
+    const quizHome = document.getElementById('quiz-home');
+    const dragGame = document.getElementById('drag-game');
+    const video = document.getElementById('videoPlayer');
+
+    let selectedOption = null;
+    let quizRunShown = false;
+    let quizRainShown = false;
+    let quizHomeShown = false;
+    let dragGameShown = false;
+    let isSeeking = false;
+    let previousTime = 0;
+
+    let errorCount = 0;
+
+    function showPanel(panel) {
+      panel.style.display = 'block';
+      const options = panel.querySelectorAll('.option');
+      options.forEach(option => {
+        option.classList.remove('selected');
+        option.onclick = function() {
+          options.forEach(opt => opt.classList.remove('selected'));
+          this.classList.add('selected');
+          selectedOption = this.dataset.answer;
+        };
+      });
+
+      if (!panel.querySelector('.error-message')) {
+        const errorMsg = document.createElement('div');
+        errorMsg.className = 'error-message';
+        panel.appendChild(errorMsg);
+      }
+    }
+
+    function playAudio(src) {
+      const audio = new Audio(src);
+      audio.play();
+    }
+
+    function checkAnswer(panelId, correctAnswer) {
+      const panel = document.getElementById(panelId);
+      const errorMsg = panel.querySelector('.error-message');
+      let successMsg = panel.querySelector('.success-message');
+
+      if (!successMsg) {
+        successMsg = document.createElement('div');
+        successMsg.className = 'success-message';
+        if (errorMsg) {
+            panel.insertBefore(successMsg, errorMsg);
+        } else {
+            panel.appendChild(successMsg);
+        }
+        successMsg.style.display = 'none';
+        successMsg.style.marginTop = '10px';
+      }
+
+      if (!selectedOption) {
+        errorMsg.textContent = "请先选择一个答案哦！";
+        successMsg.style.display = 'none';
+        return;
+      }
+
+      if (selectedOption === correctAnswer) {
+        errorMsg.textContent = "";
+        successMsg.textContent = "太棒了！你真聪明！";
+        successMsg.style.display = 'block';
+        playAudio('correct.mp3');
+        errorCount = 0;
+
+        setTimeout(() => {
+            hidePanel(panel);
+            video.play();
+            successMsg.style.display = 'none';
+        }, 1500);
+
+      } else {
+        errorCount++;
+        const encouragements = [
+          "没关系，再试一次！",
+          "你可以做到的，加油！",
+          "别放弃，继续努力！"
+        ];
+        errorMsg.textContent = encouragements[Math.min(errorCount-1, encouragements.length-1)];
+        successMsg.style.display = 'none';
+        playAudio('wrong.mp3');
+
+        panel.style.display = 'block';
+        video.pause();
+      }
+      selectedOption = null;
+    }
+
+    function hidePanel(panel) {
+      panel.style.display = 'none';
+    }
+
+    video.addEventListener('seeking', () => {
+      isSeeking = true;
+    });
+
+    let currentTime = 0;
+
+    video.addEventListener('seeked', () => {
+      isSeeking = false;
+      currentTime = video.currentTime;
+      previousTime = currentTime;
+    });
+
+    if (!video.paused) {
+        if (currentTime >= 13 && !dragGameShown) {
+            showPanel(dragGame);
+            video.pause();
+            dragGameShown = true;
+        } 
+        else if (currentTime >= 10 && currentTime < 13 && !quizHomeShown) {
+            showPanel(quizHome);
+            video.pause();
+            quizHomeShown = true;
+        }
+        else if (currentTime >= 7 && currentTime < 10 && !quizRainShown) {
+            showPanel(quizRain);
+            video.pause();
+            quizRainShown = true;
+        }
+        else if (currentTime >= 3 && currentTime < 7 && !quizRunShown) {
+            showPanel(quizRun);
+            video.pause();
+            quizRunShown = true;
+        }
+    }
+
+    video.addEventListener('timeupdate', () => {
+      if (isSeeking || video.paused) {
+        return;
+      }
+
+      const currentTime = video.currentTime;
+
+      let panelTriggered = false;
+      if (currentTime >= 217 && previousTime < 217 && !dragGameShown) { // 3分37秒
+        showPanel(dragGame);
+        video.pause();
+        dragGameShown = true;
+        panelTriggered = true;
+      } else if (currentTime >= 280 && previousTime < 280 && !quizHomeShown) { // 4分40秒
+        showPanel(quizHome);
+        video.pause();
+        quizHomeShown = true;
+        panelTriggered = true;
+      } else if (currentTime >= 261 && previousTime < 261 && !quizRainShown) { // 4分21秒
+        showPanel(quizRain);
+        video.pause();
+        quizRainShown = true;
+        panelTriggered = true;
+      } else if (currentTime >= 96 && previousTime < 96 && !quizRunShown) { // 1分36秒
+        showPanel(quizRun);
+        video.pause();
+        quizRunShown = true;
+        panelTriggered = true;
+      }
+      if (!panelTriggered && !video.paused) {
+           previousTime = currentTime;
+      }
+    });
+
+    video.addEventListener('error', () => {
+      alert("视频加载失败！请检查：\n1. 是否存在视频文件 video_converted.mp4\n2. 视频文件是否在本目录下");
+    });
+
+    function resetShoes() {
+      const draggables = document.querySelectorAll('.drag-item');
+      const dropZones = document.querySelectorAll('.drop-zone');
+      const dragContainer = document.querySelector('.drag-container');
+
+      draggables.forEach(item => {
+        item.style.display = 'block';
+        if (dragContainer) {
+           dragContainer.appendChild(item);
+        }
+      });
+
+      dropZones.forEach(zone => {
+        zone.innerHTML = '';
+        zone.classList.remove('correct', 'wrong', 'highlight');
+      });
+
+      correctLeft = false;
+      correctRight = false;
+
+      const feedback = document.querySelector('.game-feedback');
+      if (feedback) {
+          feedback.textContent = "游戏已重置，再试一次吧！";
+          setTimeout(() => { if (feedback) feedback.textContent = ""; }, 2000);
+      }
+    }
+  </script>
+
+  <style>
+    .game-feedback {
+      position: absolute;
+      bottom: -30px;
+      width: 100%;
+      text-align: center;
+      font-size: 1.2em;
+    }
+    .drop-zone.correct {
+      border-color: #4CAF50 !important;
+      background-color: rgba(76, 175, 80, 0.2);
+    }
+    @keyframes wiggle {
+      0% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      50% { transform: translateX(5px); }
+      75% { transform: translateX(-5px); }
+      100% { transform: translateX(0); }
+    }
+    .drop-zone.wrong {
+      animation: wiggle 0.5s;
+      border-color: #ff5722 !important;
+    }
+  </style>
+
+  <script>
+    let correctLeft = false;
+    let correctRight = false;
+
+    function initDragGame() {
+      const draggables = document.querySelectorAll('.drag-item');
+      const dropZones = document.querySelectorAll('.drop-zone');
+
+      draggables.forEach(item => {
+        item.addEventListener('dragstart', handleDragStart);
+      });
+
+      dropZones.forEach(zone => {
+        zone.addEventListener('dragover', handleDragOver);
+        zone.addEventListener('drop', handleDrop);
+      });
+    }
+
+    function handleDragStart(e) {
+      e.dataTransfer.setData('text/plain', this.id);
+      this.classList.add('dragging');
+    }
+
+    function handleDragOver(e) {
+      e.preventDefault();
+      this.classList.add('highlight');
+    }
+
+    function handleDrop(e) {
+      e.preventDefault();
+      const id = e.dataTransfer.getData('text/plain');
+      const draggable = document.getElementById(id);
+      const feedback = document.querySelector('.game-feedback');
+
+      const isCorrect = (draggable.id === 'drag-left' && this.dataset.side === 'left') ||
+                     (draggable.id === 'drag-right' && this.dataset.side === 'right');
+
+      if (isCorrect) {
+        this.classList.add('correct');
+        feedback.textContent = "真棒！放对了！";
+        feedback.style.color = "#4CAF50";
+
+        if (draggable.id === 'drag-left') correctLeft = true;
+        if (draggable.id === 'drag-right') correctRight = true;
+
+        if (correctLeft && correctRight) {
+          setTimeout(() => {
+            hidePanel(dragGame);
+            video.play();
+          }, 1500);
+        }
+
+        if (!this.querySelector('img')) {
+          const clone = draggable.querySelector('img').cloneNode();
+          clone.style.width = '100%';
+          this.innerHTML = '';
+          this.appendChild(clone);
+        }
+      } else {
+        this.classList.add('wrong');
+        feedback.textContent = "鞋子要找到自己的家哦~";
+        feedback.style.color = "#ff5722";
+
+        this.classList.add('wiggle');
+
+        setTimeout(() => {
+          this.classList.remove('wrong', 'wiggle');
+        }, 500);
+      }
+
+      this.classList.remove('highlight');
+    }
+
+    function handleDragEnd() {
+      this.classList.remove('dragging');
+    }
+
+    function initDragGame() {
+      const draggables = document.querySelectorAll('.drag-item');
+      const dropZones = document.querySelectorAll('.drop-zone');
+
+      draggables.forEach(item => {
+        item.addEventListener('dragstart', handleDragStart);
+        item.addEventListener('dragend', handleDragEnd);
+      });
+
+      dropZones.forEach(zone => {
+        zone.addEventListener('dragover', handleDragOver);
+        zone.addEventListener('drop', handleDrop);
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', initDragGame);
+  </script>
+</body>
+</html>
